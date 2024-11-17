@@ -29,7 +29,7 @@ int main()
 	// cross platform way of handling normal application exits, the extent "normal" depends on the platform
 	atexit(shutdown);
 
-	// Register the shutdown handlers with proper functions depending on the platform
+	// Platform specific cleanup
 	#ifdef _WIN32
 		// Register Console Control Handler if running on Windows
 		if (!SetConsoleCtrlHandler(ConsoleHandler, true))
@@ -66,10 +66,11 @@ int main()
 		catch (const std::exception& e)
 		{
 			std::cerr << "Error during server execution: " << e.what() << '\n';
-			shutdown();
+			break;
 		}
 	}
 
+	std::cout << "C++ - Server shutdown\n";
 	return 0;
 }
 
@@ -87,6 +88,15 @@ void signal_handler(int signum) {
 
 void shutdown()
 {
+	static std::atomic<bool> shutdownHandled(false);
+
+	// exchange the value of the variable with a new value) and return the old value.
+	if (shutdownHandled.exchange(true))
+	{
+		// if the previous value was true, then we already handled it
+		return;
+	}
+
 	std::cout << "Shutting down server...\n";
 	wsServerRunning.store(false);
 	wsServer.stop_listening();
