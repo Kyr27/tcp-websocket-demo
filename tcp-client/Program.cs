@@ -9,6 +9,7 @@ internal class Program
         {
             webSocket.OnMessage += WebSocket_OnMessage;
             webSocket.OnClose += WebSocket_OnClose;
+            webSocket.OnError += WebSocket_OnError;
 
             webSocket.Connect();
             webSocket.Send("C# - Hello Server!");
@@ -16,6 +17,11 @@ internal class Program
             Console.WriteLine("C# - Client Online");
             Console.ReadKey(true);
         }
+    }
+
+    private static void WebSocket_OnError(object? sender, WebSocketSharp.ErrorEventArgs e)
+    {
+        Console.WriteLine($"C# - WebSocket error: {e.Message}");
     }
 
     private static void WebSocket_OnClose(object? sender, CloseEventArgs e)
