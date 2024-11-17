@@ -11,11 +11,15 @@
 #include <stdlib.h>
 #include <csignal>
 #include <atomic>
+#include <set>
 #include "asio.hpp"
 #include "websocketpp/config/asio_no_tls.hpp"
 #include "websocketpp/server.hpp"
 
 typedef websocketpp::server<websocketpp::config::asio> server;
+
+std::set<websocketpp::connection_hdl, std::owner_less<websocketpp::connection_hdl>> connections;
+std::mutex connectionsMutex;
 
 void shutdown();
 void OnMessage(server* wsServer, websocketpp::connection_hdl hdl, server::message_ptr msg);
@@ -24,12 +28,26 @@ BOOL WINAPI ConsoleHandler(DWORD dwCtrlType);
 
 static server wsServer; // needs to be global so that we can control it from the console handler
 std::atomic<bool> wsServerRunning(true);
+
+
+void OnServerOpen(websocketpp::connection_hdl hdl)
+{
+	std::lock_guard<std::mutex> lock(connectionsMutex);
+	connections.insert(hdl);
+}
+
+void OnServerClose(websocketpp::connection_hdl hdl)
+{
+	std::lock_guard<std::mutex> lock(connectionsMutex);
+	connections.erase(hdl);
+}
+
 int main()
 {
 	// cross platform way of handling normal application exits, the extent "normal" depends on the platform
 	atexit(shutdown);
 
-	// Platform specific cleanup
+	 Platform specific cleanup
 	#ifdef _WIN32
 		// Register Console Control Handler if running on Windows
 		if (!SetConsoleCtrlHandler(ConsoleHandler, true))
@@ -45,6 +63,10 @@ int main()
 
 	// Initialize websocketpp using standalone asio
 	wsServer.init_asio();
+
+	// Set websocketpp open and close handlers
+	wsServer.set_open_handler(&OnServerOpen);
+	wsServer.set_close_handler(&OnServerClose);
 
 	// Call OnMessage function when the server receives a message
 	wsServer.set_message_handler(std::bind(&OnMessage, &wsServer, std::placeholders::_1, std::placeholders::_2));
@@ -103,6 +125,21 @@ void shutdown()
 	try
 	{
 		wsServer.stop_listening();
+
+		std::lock_guard<std::mutex> lock(connectionsMutex);
+
+		for (auto hdl : connections)
+		{
+			websocketpp::lib::error_code ec;
+			wsServer.close(hdl, websocketpp::close::status::going_away, "Server is shutting down", ec);
+			
+			if (ec)
+			{
+				std::cerr << "Error while trying to close connections: " << ec.message() << '\n';
+			}
+		}
+
+		connections.clear();
 		wsServer.stop();
 	}
 	catch (const std::exception& e)
