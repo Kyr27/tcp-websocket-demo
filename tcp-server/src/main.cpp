@@ -59,7 +59,15 @@ int main()
 
 	while (wsServerRunning.load())
 	{
-		wsServer.run_one();
+		try
+		{
+			wsServer.run_one();
+		}
+		catch (const std::exception& e)
+		{
+			std::cerr << "Error during server execution: " << e.what() << '\n';
+			shutdown();
+		}
 	}
 
 	return 0;
