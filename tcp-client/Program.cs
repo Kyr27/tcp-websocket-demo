@@ -31,6 +31,6 @@ internal class Program
 
     private static void WebSocket_OnMessage(object? sender, MessageEventArgs e)
     {
-        Console.WriteLine("C# - Received from server: " + e.Data);
+        Console.WriteLine($"C# - Received from server: {e.Data}");
     }
 }
