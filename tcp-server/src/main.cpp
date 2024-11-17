@@ -47,7 +47,7 @@ int main()
 	// cross platform way of handling normal application exits, the extent "normal" depends on the platform
 	atexit(shutdown);
 
-	 Platform specific cleanup
+	// Platform specific cleanup
 	#ifdef _WIN32
 		// Register Console Control Handler if running on Windows
 		if (!SetConsoleCtrlHandler(ConsoleHandler, true))
