@@ -99,10 +99,10 @@ void shutdown()
 
 	std::cout << "Shutting down server...\n";
 	wsServerRunning.store(false);
-	wsServer.stop_listening();
 
 	try
 	{
+		wsServer.stop_listening();
 		wsServer.stop();
 	}
 	catch (const std::exception& e)
