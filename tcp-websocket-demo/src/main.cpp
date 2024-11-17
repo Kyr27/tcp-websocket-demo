@@ -1,4 +1,6 @@
+#define ASIO_STANDALONE
 #include <iostream>
+#include "asio.hpp"
 
 
 int main()
