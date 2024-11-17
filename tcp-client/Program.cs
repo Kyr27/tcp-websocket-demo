@@ -7,7 +7,7 @@ internal class Program
         Console.WriteLine("C# - Client is active");
 
         // using here ensures that if anything goes wrong, it is properly disposed of and not left hanging
-        using (WebSocket webSocket = new WebSocket("ws://localhost:8080"))
+        using (WebSocket webSocket = new WebSocket("ws://localhost:8788"))
         {
             webSocket.OnMessage += WebSocket_OnMessage;
 
