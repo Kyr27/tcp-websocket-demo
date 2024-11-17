@@ -4,8 +4,6 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        Console.WriteLine("C# - Client is active");
-
         // using here ensures that if anything goes wrong, it is properly disposed of and not left hanging
         using (WebSocket webSocket = new WebSocket("ws://localhost:8788"))
         {
@@ -15,6 +13,7 @@ internal class Program
             webSocket.Send("C# - Hello Server!");
         }
 
+        Console.WriteLine("C# - Client Online");
         Console.ReadKey();
     }
 
