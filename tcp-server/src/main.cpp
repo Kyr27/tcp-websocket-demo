@@ -100,7 +100,15 @@ void shutdown()
 	std::cout << "Shutting down server...\n";
 	wsServerRunning.store(false);
 	wsServer.stop_listening();
-	wsServer.stop();
+
+	try
+	{
+		wsServer.stop();
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "Error during an attempt to stop the server: " << e.what() << '\n';
+	}
 
 	std::cout << "Server has shutdown\n";
 }
