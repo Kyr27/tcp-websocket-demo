@@ -8,6 +8,7 @@ internal class Program
         using (WebSocket webSocket = new WebSocket("ws://localhost:9002"))
         {
             webSocket.OnMessage += WebSocket_OnMessage;
+            webSocket.OnClose += WebSocket_OnClose;
 
             webSocket.Connect();
             webSocket.Send("C# - Hello Server!");
@@ -15,6 +16,11 @@ internal class Program
             Console.WriteLine("C# - Client Online");
             Console.ReadKey(true);
         }
+    }
+
+    private static void WebSocket_OnClose(object? sender, CloseEventArgs e)
+    {
+        Console.WriteLine($"C# - Server closed the connection: {e.Reason} (Code: {e.Code})");
     }
 
     private static void WebSocket_OnMessage(object? sender, MessageEventArgs e)
