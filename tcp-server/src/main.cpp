@@ -24,7 +24,10 @@ std::mutex connectionsMutex;
 void shutdown();
 void OnMessage(server* wsServer, websocketpp::connection_hdl hdl, server::message_ptr msg);
 void signal_handler(int signum);
-BOOL WINAPI ConsoleHandler(DWORD dwCtrlType);
+
+#ifdef _WIN32
+	BOOL WINAPI ConsoleHandler(DWORD dwCtrlType);
+#endif
 
 static server wsServer; // needs to be global so that we can control it from the console handler
 std::atomic<bool> wsServerRunning(true);
