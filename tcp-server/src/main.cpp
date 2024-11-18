@@ -48,12 +48,12 @@ void OnServerClose(websocketpp::connection_hdl hdl)
 
 int main()
 {
-	// cross platform way of handling normal application exits, the extent "normal" depends on the platform
+	// cross platform way of handling normal application exits, the extent of "normal" depends on the platform
 	atexit(shutdown);
 
 	// Platform specific cleanup
 	#ifdef _WIN32
-		// Register Console Control Handler if running on Windows
+		// Register Console Control Handler if running on Windows, very versatile in what it can do.
 		if (!SetConsoleCtrlHandler(ConsoleHandler, true))
 		{
 			std::cerr << "Failed to set console control handler\n";
@@ -65,6 +65,7 @@ int main()
 		std::signal(SIGTERM, signal_handler); // handle termination gracefully
 	#endif
 
+	// Log all info and errors
 	wsServer.set_access_channels(websocketpp::log::alevel::all);
 	wsServer.set_error_channels(websocketpp::log::elevel::all);
 
@@ -90,6 +91,7 @@ int main()
 	{
 		try
 		{
+			// run in a non-blocking manner, so we can check for wsServerRunning on every iteration
 			wsServer.run_one();
 		}
 		catch (const std::exception& e)
@@ -128,6 +130,7 @@ void shutdown()
 		wsServer.stop_listening();
 
 		{
+			// Go through each connection, and tell them we are closing
 			std::lock_guard<std::mutex> lock(connectionsMutex);
 			for (auto hdl : connections) {
 				websocketpp::lib::error_code ec;
