@@ -12,10 +12,27 @@ internal class Program
             webSocket.OnError += WebSocket_OnError;
 
             webSocket.Connect();
-            webSocket.Send("C# - Hello Server!");
+
+            if (webSocket.IsAlive)
+            {
+                try
+                {
+                    webSocket.Send("C# - Hello Server!");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"C# - Error while sending: {e.Message}");
+                }
+            }
 
             Console.WriteLine("C# - Client Online");
             Console.ReadKey(true);
+
+            // Close the WebSocket explicitly, not necessary, but adds an extra layer of safety
+            if (webSocket.ReadyState == WebSocketState.Open)
+            {
+                webSocket.Close(CloseStatusCode.Normal, "Client closing connection");
+            }
         }
     }
 
