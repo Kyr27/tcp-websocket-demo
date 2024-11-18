@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <csignal>
 #include <atomic>
+#include <chrono>
 #include <set>
 #include "asio.hpp"
 #include "websocketpp/config/asio_no_tls.hpp"
@@ -64,6 +65,9 @@ int main()
 		std::signal(SIGTERM, signal_handler); // handle termination gracefully
 	#endif
 
+	wsServer.set_access_channels(websocketpp::log::alevel::all);
+	wsServer.set_error_channels(websocketpp::log::elevel::all);
+
 	// Initialize websocketpp using standalone asio
 	wsServer.init_asio();
 
@@ -115,43 +119,41 @@ void shutdown()
 {
 	static std::atomic<bool> shutdownHandled(false);
 
-	// exchange the value of the variable with a new value) and return the old value.
-	if (shutdownHandled.exchange(true))
-	{
-		// if the previous value was true, then we already handled it
-		return;
-	}
+	if (shutdownHandled.exchange(true)) return;
 
 	std::cout << "Shutting down server...\n";
 	wsServerRunning.store(false);
 
-	try
-	{
+	try {
 		wsServer.stop_listening();
 
-		std::lock_guard<std::mutex> lock(connectionsMutex);
-
-		for (auto hdl : connections)
 		{
-			websocketpp::lib::error_code ec;
-			wsServer.close(hdl, websocketpp::close::status::going_away, "Server is shutting down", ec);
-			
-			if (ec)
-			{
-				std::cerr << "Error while trying to close connections: " << ec.message() << '\n';
+			std::lock_guard<std::mutex> lock(connectionsMutex);
+			for (auto hdl : connections) {
+				websocketpp::lib::error_code ec;
+				wsServer.close(hdl, websocketpp::close::status::going_away, "Server is shutting down", ec);
+
+				if (ec) {
+					std::cerr << "Error while trying to close connections: " << ec.message() << '\n';
+				}
 			}
 		}
 
-		connections.clear();
+		// Process any remaining close handshake messages
+		while (!connections.empty()) {
+			wsServer.poll_one(); // Process pending events
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		}
+
 		wsServer.stop();
 	}
-	catch (const std::exception& e)
-	{
-		std::cerr << "Error during an attempt to stop the server: " << e.what() << '\n';
+	catch (const std::exception& e) {
+		std::cerr << "Error during shutdown: " << e.what() << '\n';
 	}
 
 	std::cout << "Server has shutdown\n";
 }
+
 
 #ifdef _WIN32
 	BOOL WINAPI ConsoleHandler(DWORD dwCtrlType)
@@ -163,6 +165,9 @@ void shutdown()
 		case CTRL_LOGOFF_EVENT:
 		case CTRL_SHUTDOWN_EVENT:
 			shutdown();
+
+			// Stop Windows from immediately exiting, before shutdown has had enough time to close all connections, errors arise without this part
+			std::this_thread::sleep_for(std::chrono::seconds(1));
 
 			return TRUE;
 		default:
