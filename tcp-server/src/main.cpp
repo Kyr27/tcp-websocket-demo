@@ -127,19 +127,18 @@ void shutdown()
 	std::cout << "Shutting down server...\n";
 	wsServerRunning.store(false);
 
-	try {
+	try 
+	{
 		wsServer.stop_listening();
 
-		{
-			// Go through each connection, and tell them we are closing
-			std::lock_guard<std::mutex> lock(connectionsMutex);
-			for (auto hdl : connections) {
-				websocketpp::lib::error_code ec;
-				wsServer.close(hdl, websocketpp::close::status::going_away, "Server is shutting down", ec);
+		// Go through each connection, and tell them we are closing
+		std::lock_guard<std::mutex> lock(connectionsMutex);
+		for (auto hdl : connections) {
+			websocketpp::lib::error_code ec;
+			wsServer.close(hdl, websocketpp::close::status::going_away, "Server is shutting down", ec);
 
-				if (ec) {
-					std::cerr << "Error while trying to close connections: " << ec.message() << '\n';
-				}
+			if (ec) {
+				std::cerr << "Error while trying to close connections: " << ec.message() << '\n';
 			}
 		}
 
