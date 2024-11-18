@@ -115,6 +115,7 @@ void OnMessage(server* wsServer, websocketpp::connection_hdl hdl, server::messag
 
 void signal_handler(int signum) {
 	shutdown();
+	std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
 void shutdown()
